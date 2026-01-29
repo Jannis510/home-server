@@ -1,0 +1,19 @@
+.env
+data/
+
+# Secrets & certificates
+secrets/**
+!secrets/**/.gitkeep
+
+# Environment files
+.env
+.env.*
+
+# Optional: editor / OS
+.DS_Store
+*.swp
+
+!nginx/ssl/
+!nginx/ssl/certs/
+!nginx/ssl/private/
+!.gitkeep
