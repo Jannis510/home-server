@@ -1,19 +1,8 @@
 .env
-data/
+**/acme.json
+**/*.key
+**/*.crt
+**/*.pem
+**/secrets/
 
-# Secrets & certificates
-secrets/**
-!secrets/**/.gitkeep
-
-# Environment files
-.env
-.env.*
-
-# Optional: editor / OS
-.DS_Store
-*.swp
-
-!nginx/ssl/
-!nginx/ssl/certs/
-!nginx/ssl/private/
-!.gitkeep
+.idea

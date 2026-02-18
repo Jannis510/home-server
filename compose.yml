@@ -1,0 +1,65 @@
+name: home-server
+services:
+  unbound:
+    image: mvance/unbound:1.19.3
+    container_name: unbound
+    networks:
+      - dns_net
+    volumes:
+      - ./config/unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf:ro
+      - unbound:/opt/unbound/etc/unbound/var
+    restart: no
+    expose:
+      - "5335"
+    healthcheck:
+      test: [ "CMD-SHELL", "drill @127.0.0.1 -p 5335 example.com || exit 1" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    hostname: pihole
+    depends_on:
+      unbound:
+        condition: service_healthy
+    networks:
+      - dns_net
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "127.0.0.1:8080:80/tcp"
+    environment:
+      TZ: "${TZ}"
+      FTLCONF_webserver_api_password: "${PIHOLE_WEBPASSWORD}"
+      DNSMASQ_LISTENING: "all"
+      # Pi-hole nutzt Unbound als Upstream (Containername im dns_net)
+      FTLCONF_dns_upstreams: "unbound#5335"
+      RATE_LIMIT: "0/0"
+      FTLCONF_dns_hosts: |-
+        127.0.0.1 pihole.home.arpa
+        127.0.0.1 stepca.home.arpa
+        127.0.0.1 traefik.home.arpa
+
+    volumes:
+      - pihole-etc:/etc/pihole
+      - pihole-dnsmasq:/etc/dnsmasq.d
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pihole status >/dev/null 2>&1 || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+
+networks:
+  dns_net:
+    name: dns_net
+    driver: bridge
+
+volumes:
+  pihole-etc:
+  pihole-dnsmasq:
+  unbound:
