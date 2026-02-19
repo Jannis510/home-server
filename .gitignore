@@ -6,7 +6,6 @@
 
 # Step-CA Secrets
 config/stepca/password.txt
-artifacts/pki/*
 
 # Traefik
 config/traefik/usersfile
