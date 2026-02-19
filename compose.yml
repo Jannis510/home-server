@@ -27,6 +27,7 @@ services:
         condition: service_healthy
     networks:
       - dns_net
+      - proxy_net
     ports:
       - "53:53/tcp"
       - "53:53/udp"
@@ -39,10 +40,9 @@ services:
       FTLCONF_dns_upstreams: "unbound#5335"
       RATE_LIMIT: "0/0"
       FTLCONF_dns_hosts: |-
-        127.0.0.1 pihole.home.arpa
-        127.0.0.1 stepca.home.arpa
-        127.0.0.1 traefik.home.arpa
-
+        192.168.50.14 pihole.home.arpa
+        192.168.50.14 stepca.home.arpa
+        192.168.50.14 traefik.home.arpa
     volumes:
       - pihole-etc:/etc/pihole
       - pihole-dnsmasq:/etc/dnsmasq.d
@@ -52,11 +52,39 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    labels:
+      - traefik.enable=true
 
+      - traefik.http.routers.pihole.rule=Host(`pihole.home.arpa`)
+      - traefik.http.routers.pihole.entrypoints=web
+      - traefik.http.routers.pihole.service=pihole-svc
+      - traefik.http.services.pihole-svc.loadbalancer.server.port=80
+
+      - traefik.http.routers.pihole.middlewares=pihole-redirect
+      - traefik.http.middlewares.pihole-redirect.redirectregex.regex=^http://pihole\.home\.arpa/?$
+      - traefik.http.middlewares.pihole-redirect.redirectregex.replacement=http://pihole.home.arpa/admin/
+      - traefik.http.middlewares.pihole-redirect.redirectregex.permanent=true
+
+
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    networks:
+      - proxy_net
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    restart: unless-stopped
 
 networks:
   dns_net:
     name: dns_net
+    driver: bridge
+
+  proxy_net:
+    name: proxy_net
     driver: bridge
 
 volumes:
