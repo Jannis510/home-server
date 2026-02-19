@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  validate-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compose config validates
+        run: |
+          docker compose --env-file .env.ci -f compose.yml config >/dev/null
+
+      - name: YAML lint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .
+          config_data: |
+            extends: default
+            rules:
+              line-length: disable
+
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@v2
+        with:
+          scandir: ./config
+
+      - name: ShellCheck scripts
+        uses: ludeeus/action-shellcheck@v2
+        with:
+          scandir: ./scripts
+
+      - name: Policy - forbid :latest
+        run: |
+          if grep -R --line-number -E 'image:\s+.+:latest\b' compose.yml; then
+            echo "ERROR: Do not use :latest tags." >&2
+            exit 1
+          fi
+          if grep -R --line-number --include='*.sh' -E ':[[:space:]]*latest\b' scripts; then
+            echo "ERROR: Do not use :latest tags in shell scripts." >&2
+            exit 1
+          fi
+
+      - name: Policy - Traefik log level not DEBUG on main
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main') }}
+        run: |
+          if grep -R --line-number -E '^\s*level:\s*DEBUG\s*$' config/traefik/traefik.yml; then
+            echo "ERROR: Traefik log level DEBUG on main is not allowed." >&2
+            exit 1
+          fi
