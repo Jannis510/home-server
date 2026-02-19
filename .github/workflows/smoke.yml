@@ -1,3 +1,4 @@
+---
 name: Smoke
 
 on:
@@ -8,7 +9,7 @@ on:
       - "config/**"
       - "scripts/**"
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - "compose.yml"
       - "config/**"
@@ -24,6 +25,8 @@ jobs:
       - name: Prepare CI-only local files
         run: |
           mkdir -p config/stepca config/traefik
+          mkdir -p artifacts/pki
+          chmod 0777 artifacts/pki
           printf '%s\n' 'ci-smoke-password' > config/stepca/password.txt
           printf '%s\n' 'admin:$2y$05$wR35Tr0xI6qG1w0vP7YfbuKNhUJgOuA7nA6cLxgbmRZwFz7wXfQhW' > config/traefik/usersfile
 

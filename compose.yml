@@ -12,7 +12,7 @@ services:
     expose:
       - "5335"
     healthcheck:
-      test: [ "CMD-SHELL", "drill @127.0.0.1 -p 5335 example.com || exit 1" ]
+      test: ["CMD-SHELL", "drill @127.0.0.1 -p 5335 example.com || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -48,7 +48,7 @@ services:
       - pihole-dnsmasq:/etc/dnsmasq.d
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pihole status >/dev/null 2>&1 || exit 1" ]
+      test: ["CMD-SHELL", "pihole status >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -134,8 +134,8 @@ services:
     volumes:
       - ./artifacts/pki:/export
       - ./config/stepca/export-roots.sh:/usr/local/bin/export-roots.sh:ro
-    entrypoint: [ "/bin/sh","-lc" ]
-    command: [ "sh /usr/local/bin/export-roots.sh" ]
+    entrypoint: ["/bin/sh", "-lc"]
+    command: ["sh /usr/local/bin/export-roots.sh"]
     restart: "no"
 
 networks:

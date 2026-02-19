@@ -1,3 +1,4 @@
+---
 name: Security Scan
 
 on:
@@ -9,14 +10,14 @@ on:
       - "scripts/**"
       - ".github/workflows/security.yml"
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - "compose.yml"
       - "config/**"
       - "scripts/**"
       - ".github/workflows/security.yml"
   schedule:
-    - cron: "0 6 * * 1" # Montag 06:00 UTC
+    - cron: "0 6 * * 1"  # Montag 06:00 UTC
 
 permissions:
   contents: read
