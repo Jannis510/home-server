@@ -4,7 +4,7 @@ entryPoints:
 
 api:
   dashboard: true
-  insecure: true
+  insecure: false
 
 providers:
   docker:
@@ -14,3 +14,6 @@ providers:
 
 log:
   level: INFO
+
+accessLog: {}
+ping: {}

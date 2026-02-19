@@ -54,7 +54,9 @@ services:
       retries: 5
     labels:
       - traefik.enable=true
+      - traefik.docker.network=proxy_net
 
+      # Redirect von pihole.home.arpa -> /admin/
       - traefik.http.routers.pihole.rule=Host(`pihole.home.arpa`)
       - traefik.http.routers.pihole.entrypoints=web
       - traefik.http.routers.pihole.service=pihole-svc
@@ -76,7 +78,21 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config/traefik/usersfile:/etc/traefik/usersfile:ro
     restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy_net
+      # Router fürs Traefik Dashboard
+      - traefik.http.routers.traefik.rule=Host(`traefik.home.arpa`)
+      - traefik.http.routers.traefik.entrypoints=web
+      - traefik.http.routers.traefik.service=api@internal
+
+      # BasicAuth Middleware -> admin
+      - traefik.http.middlewares.traefik-auth.basicauth.usersfile=/etc/traefik/usersfile
+
+      # Middleware am Router aktivieren
+      - traefik.http.routers.traefik.middlewares=traefik-auth
 
 networks:
   dns_net:
