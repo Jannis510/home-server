@@ -58,39 +58,50 @@ services:
 
       # Redirect von pihole.home.arpa -> /admin/
       - traefik.http.routers.pihole.rule=Host(`pihole.home.arpa`)
-      - traefik.http.routers.pihole.entrypoints=web
+      - traefik.http.routers.pihole.entrypoints=websecure
+      - traefik.http.routers.pihole.tls=true
+      - traefik.http.routers.pihole.tls.certresolver=stepca
       - traefik.http.routers.pihole.service=pihole-svc
       - traefik.http.services.pihole-svc.loadbalancer.server.port=80
 
       - traefik.http.routers.pihole.middlewares=pihole-redirect
-      - traefik.http.middlewares.pihole-redirect.redirectregex.regex=^http://pihole\.home\.arpa/?$
-      - traefik.http.middlewares.pihole-redirect.redirectregex.replacement=http://pihole.home.arpa/admin/
+      - traefik.http.middlewares.pihole-redirect.redirectregex.regex=^https?://pihole\.home\.arpa/?$
+      - traefik.http.middlewares.pihole-redirect.redirectregex.replacement=https://pihole.home.arpa/admin/
       - traefik.http.middlewares.pihole-redirect.redirectregex.permanent=true
 
 
   traefik:
     image: traefik:v2.11
     container_name: traefik
+    depends_on:
+      stepca-export:
+        condition: service_completed_successfully
     networks:
       - proxy_net
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./config/traefik/usersfile:/etc/traefik/usersfile:ro
+      - ./artifacts/pki:/certs/:ro
+      - traefik-data:/data
     restart: unless-stopped
+    environment:
+      - SSL_CERT_FILE=/certs/root_ca.crt
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy_net
       # Router fürs Traefik Dashboard
       - traefik.http.routers.traefik.rule=Host(`traefik.home.arpa`)
-      - traefik.http.routers.traefik.entrypoints=web
+      - traefik.http.routers.traefik.entrypoints=websecure
       - traefik.http.routers.traefik.service=api@internal
+      - traefik.http.routers.traefik.tls=true
+      - traefik.http.routers.traefik.tls.certresolver=stepca
 
       # BasicAuth Middleware -> admin
       - traefik.http.middlewares.traefik-auth.basicauth.usersfile=/etc/traefik/usersfile
-
       # Middleware am Router aktivieren
       - traefik.http.routers.traefik.middlewares=traefik-auth
 
@@ -110,7 +121,9 @@ services:
       DOCKER_STEPCA_INIT_PASSWORD_FILE: /run/password.txt
       DOCKER_STEPCA_INIT_ACME: ${STEPCA_INIT_ACME:-true}
     restart: unless-stopped
-    # kein ports: -> nur intern erreichbar
+    extra_hosts:
+      - "traefik.home.arpa:host-gateway"
+      - "pihole.home.arpa:host-gateway"
 
   stepca-export:
     image: curlimages/curl:8.6.0
@@ -139,3 +152,4 @@ volumes:
   pihole-dnsmasq:
   unbound:
   stepca-data:
+  traefik-data:

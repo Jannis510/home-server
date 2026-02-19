@@ -1,6 +1,16 @@
 entryPoints:
   web:
     address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+
 
 api:
   dashboard: true
@@ -11,9 +21,17 @@ providers:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
 
+certificatesResolvers:
+  stepca:
+    acme:
+      email: admin@home.arpa
+      storage: /data/acme.json
+      caServer: https://stepca:9000/acme/acme/directory
+      tlsChallenge: true
+
 
 log:
-  level: INFO
+  level: DEBUG
 
 accessLog: {}
 ping: {}
