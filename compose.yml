@@ -94,6 +94,37 @@ services:
       # Middleware am Router aktivieren
       - traefik.http.routers.traefik.middlewares=traefik-auth
 
+  stepca:
+    image: smallstep/step-ca:0.26.1
+    container_name: stepca
+    networks:
+      - proxy_net
+    volumes:
+      - stepca-data:/home/step
+      - ./config/stepca/password.txt:/run/password.txt:ro
+    environment:
+      DOCKER_STEPCA_INIT_NAME: ${STEPCA_INIT_NAME:-home-arpa-ca}
+      DOCKER_STEPCA_INIT_DNS_NAMES: ${STEPCA_INIT_DNS_NAMES:-stepca,stepca.home.arpa}
+      DOCKER_STEPCA_INIT_ADDRESS: ${STEPCA_INIT_ADDRESS:-:9000}
+      DOCKER_STEPCA_INIT_PROVISIONER_NAME: ${STEPCA_INIT_PROVISIONER_NAME:-admin}
+      DOCKER_STEPCA_INIT_PASSWORD_FILE: /run/password.txt
+      DOCKER_STEPCA_INIT_ACME: ${STEPCA_INIT_ACME:-true}
+    restart: unless-stopped
+    # kein ports: -> nur intern erreichbar
+
+  stepca-export:
+    image: curlimages/curl:8.6.0
+    depends_on:
+      - stepca
+    networks:
+      - proxy_net
+    volumes:
+      - ./artifacts/pki:/export
+      - ./config/stepca/export-roots.sh:/usr/local/bin/export-roots.sh:ro
+    entrypoint: [ "/bin/sh","-lc" ]
+    command: [ "/usr/local/bin/export-roots.sh" ]
+    restart: "no"
+
 networks:
   dns_net:
     name: dns_net
@@ -107,3 +138,4 @@ volumes:
   pihole-etc:
   pihole-dnsmasq:
   unbound:
+  stepca-data:

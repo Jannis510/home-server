@@ -3,6 +3,12 @@
 **/*.key
 **/*.crt
 **/*.pem
-**/secrets/
+
+# Step-CA Secrets
+config/stepca/password.txt
+artifacts/pki/*
+
+# Traefik
+config/traefik/usersfile
 
 .idea
