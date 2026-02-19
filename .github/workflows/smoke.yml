@@ -47,3 +47,8 @@ jobs:
         run: |
           docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml ps
           docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml logs --no-color --tail=200
+
+      - name: Cleanup stack
+        if: always()
+        run: |
+          docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml down -v --remove-orphans
