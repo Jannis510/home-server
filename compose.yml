@@ -135,7 +135,7 @@ services:
       - ./artifacts/pki:/export
       - ./config/stepca/export-roots.sh:/usr/local/bin/export-roots.sh:ro
     entrypoint: [ "/bin/sh","-lc" ]
-    command: [ "/usr/local/bin/export-roots.sh" ]
+    command: [ "sh /usr/local/bin/export-roots.sh" ]
     restart: "no"
 
 networks:

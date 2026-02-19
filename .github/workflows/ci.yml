@@ -24,15 +24,13 @@ jobs:
             rules:
               line-length: disable
 
-      - name: ShellCheck
-        uses: ludeeus/action-shellcheck@v2
-        with:
-          scandir: ./config
-
-      - name: ShellCheck scripts
-        uses: ludeeus/action-shellcheck@v2
-        with:
-          scandir: ./scripts
+      - name: ShellCheck (config + scripts)
+        run: |
+          if ! command -v shellcheck >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y shellcheck
+          fi
+          find config scripts -type f -name "*.sh" -print0 | xargs -0 -r shellcheck
 
       - name: Policy - forbid :latest
         run: |
