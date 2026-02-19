@@ -66,8 +66,10 @@ wait_for_service_ready "stepca"
 wait_for_service_ready "traefik"
 
 # 2) stepca-export must have completed successfully
-stepca_export_state="$(docker inspect -f '{{.State.Status}}' stepca-export)"
-stepca_export_exit_code="$(docker inspect -f '{{.State.ExitCode}}' stepca-export)"
+stepca_export_id="$(compose ps -q stepca-export)"
+assert_not_empty "$stepca_export_id" "stepca-export container was not created"
+stepca_export_state="$(docker inspect -f '{{.State.Status}}' "$stepca_export_id")"
+stepca_export_exit_code="$(docker inspect -f '{{.State.ExitCode}}' "$stepca_export_id")"
 assert_equals "$stepca_export_state" "exited" "stepca-export did not finish as a one-shot container"
 assert_equals "$stepca_export_exit_code" "0" "stepca-export failed"
 
