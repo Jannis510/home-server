@@ -4,7 +4,7 @@ set -euo pipefail
 DNS_TOOL_IMAGE="alpine:3.20"
 
 compose() {
-  docker compose --env-file .env.ci -f compose.yml "$@"
+  docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml "$@"
 }
 
 assert_not_empty() {

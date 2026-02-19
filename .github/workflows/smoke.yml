@@ -6,12 +6,14 @@ on:
   pull_request:
     paths:
       - "compose.yml"
+      - "compose.ci.yml"
       - "config/**"
       - "scripts/**"
   push:
     branches: [main]
     paths:
       - "compose.yml"
+      - "compose.ci.yml"
       - "config/**"
       - "scripts/**"
 
@@ -32,7 +34,7 @@ jobs:
 
       - name: Bring stack up
         run: |
-          docker compose --env-file .env.ci -f compose.yml up -d --build
+          docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml up -d --build
 
       - name: Run smoke script
         run: |
@@ -42,5 +44,5 @@ jobs:
       - name: Dump compose ps on failure
         if: failure()
         run: |
-          docker compose -f compose.yml ps
-          docker compose -f compose.yml logs --no-color --tail=200
+          docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml ps
+          docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml logs --no-color --tail=200

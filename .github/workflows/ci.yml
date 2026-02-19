@@ -14,7 +14,7 @@ jobs:
 
       - name: Compose config validates
         run: |
-          docker compose --env-file .env.ci -f compose.yml config >/dev/null
+          docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml config >/dev/null
 
       - name: YAML lint
         uses: ibiqlik/action-yamllint@v3
@@ -23,6 +23,9 @@ jobs:
           config_data: |
             extends: default
             rules:
+              document-start: disable
+              truthy: disable
+              new-line-at-end-of-file: enable
               line-length: disable
 
       - name: ShellCheck (config + scripts)
