@@ -30,7 +30,8 @@ jobs:
           mkdir -p artifacts/pki
           chmod 0777 artifacts/pki
           printf '%s\n' 'ci-smoke-password' > config/stepca/password.txt
-          printf '%s\n' 'admin:$2y$05$wR35Tr0xI6qG1w0vP7YfbuKNhUJgOuA7nA6cLxgbmRZwFz7wXfQhW' > config/traefik/usersfile
+          TRAEFIK_AUTH_LINE="$(docker run --rm httpd:2.4-alpine htpasswd -nbB admin ci-smoke-password | tr -d '\r\n')"
+          printf '%s\n' "$TRAEFIK_AUTH_LINE" > config/traefik/usersfile
 
       - name: Bring stack up
         run: |
