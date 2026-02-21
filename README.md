@@ -330,17 +330,30 @@ The export task does not remain running after completion.
 
 ---
 
-### 5. Verify core services
+### 5. Configure Router DNS (Required for LAN Clients) and verify core services
 
-From a LAN or VPN client:
+To ensure that all LAN devices use Pi-hole for DNS resolution, configure your router’s DHCP settings:
+
+1. Open your router’s administration interface.
+2. Navigate to **DHCP / LAN settings**.
+3. Set the **Primary DNS server** to the static IP of the home server  
+   (value of `PIHOLE_LOCAL_IP`).
+4. Remove any external DNS servers (e.g., ISP DNS, `8.8.8.8`).
+5. Save the configuration and restart DHCP, or reconnect client devices.
+
+After renewing the DHCP lease, clients should display:
+
+```text
+DNS Server = <PIHOLE_LOCAL_IP>
+```
+
+Verify core services from a LAN or VPN client:
 * Traefik dashboard: `https://traefik.home.arpa`
-* Pi-hole admin: `https://pihole.home.arpa/admin/`
+* Pi-hole admin: `https://pihole.home.arpa`
 
 Ensure that:
 - DNS resolution works via the host IP.
 - HTTPS certificates are issued by the internal CA.
-
----
 
 ---
 
