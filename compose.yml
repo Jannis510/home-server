@@ -8,7 +8,7 @@ services:
     volumes:
       - ./config/unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf:ro
       - unbound:/opt/unbound/etc/unbound/var
-    restart: no
+    restart: unless-stopped
     expose:
       - "5335"
     healthcheck:
@@ -31,18 +31,16 @@ services:
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      - "127.0.0.1:8080:80/tcp"
     environment:
       TZ: "${TZ}"
       FTLCONF_webserver_api_password: "${PIHOLE_WEBPASSWORD}"
-      DNSMASQ_LISTENING: "all"
+      DNSMASQ_LISTENING: "${PIHOLE_DNSMASQ_LISTENING:-all}"
       # Pi-hole nutzt Unbound als Upstream (Containername im dns_net)
-      FTLCONF_dns_upstreams: "unbound#5335"
-      RATE_LIMIT: "0/0"
+      FTLCONF_dns_upstreams: "${PIHOLE_DNS_UPSTREAMS:-unbound#5335}"
+      RATE_LIMIT: "${PIHOLE_RATE_LIMIT:-0/0}"
       FTLCONF_dns_hosts: |-
-        192.168.50.14 pihole.home.arpa
-        192.168.50.14 stepca.home.arpa
-        192.168.50.14 traefik.home.arpa
+        ${PIHOLE_LOCAL_IP:-192.168.0.10} pihole.home.arpa
+        ${PIHOLE_LOCAL_IP:-192.168.0.10} traefik.home.arpa
     volumes:
       - pihole-etc:/etc/pihole
       - pihole-dnsmasq:/etc/dnsmasq.d
