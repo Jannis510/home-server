@@ -1,0 +1,170 @@
+name: home-server
+services:
+  unbound:
+    image: mvance/unbound:1.19.3
+    container_name: unbound
+    # Internal recursive resolver (no public port exposure)
+    networks:
+      - dns_net
+    volumes:
+      - ./config/unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf:ro
+      - unbound:/opt/unbound/etc/unbound/var
+    restart: unless-stopped
+    # Exposed only inside dns_net (not published to host)
+    expose:
+      - "5335"
+    healthcheck:
+      test: ["CMD-SHELL", "drill @127.0.0.1 -p 5335 example.com || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+
+  pihole:
+    image: pihole/pihole:2025.08.0
+    container_name: pihole
+    hostname: pihole
+    # Ensure Unbound is healthy before DNS service starts
+    depends_on:
+      unbound:
+        condition: service_healthy
+    # Dual-homed:
+    # - dns_net for recursive resolution path
+    # - proxy_net for web UI exposure via Traefik
+    networks:
+      - dns_net
+      - proxy_net
+    # Publish DNS to host (LAN clients use this as primary resolver)
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+    environment:
+      TZ: "${TZ}"
+      FTLCONF_webserver_api_password: "${PIHOLE_WEBPASSWORD}"
+      DNSMASQ_LISTENING: "${PIHOLE_DNSMASQ_LISTENING:-all}"
+      # Use Unbound as upstream resolver (container name inside dns_net)
+      FTLCONF_dns_upstreams: "${PIHOLE_DNS_UPSTREAMS:-unbound#5335}"
+      RATE_LIMIT: "${PIHOLE_RATE_LIMIT:-0/0}"
+      FTLCONF_dns_hosts: |-
+        ${PIHOLE_LOCAL_IP:-192.168.0.10} pihole.home.arpa
+        ${PIHOLE_LOCAL_IP:-192.168.0.10} traefik.home.arpa
+    volumes:
+      - pihole-etc:/etc/pihole
+      - pihole-dnsmasq:/etc/dnsmasq.d
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pihole status >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy_net
+
+      # Redirect pihole.home.arpa -> /admin/
+      - traefik.http.routers.pihole.rule=Host(`pihole.home.arpa`)
+      - traefik.http.routers.pihole.entrypoints=websecure
+      - traefik.http.routers.pihole.tls=true
+      - traefik.http.routers.pihole.tls.certresolver=stepca
+      - traefik.http.routers.pihole.service=pihole-svc
+      - traefik.http.services.pihole-svc.loadbalancer.server.port=80
+
+      - traefik.http.routers.pihole.middlewares=pihole-redirect
+      - traefik.http.middlewares.pihole-redirect.redirectregex.regex=^https?://pihole\.home\.arpa/?$
+      - traefik.http.middlewares.pihole-redirect.redirectregex.replacement=https://pihole.home.arpa/admin/
+      - traefik.http.middlewares.pihole-redirect.redirectregex.permanent=true
+
+
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    # Wait for Root CA export before starting ACME resolver
+    depends_on:
+      stepca-export:
+        condition: service_completed_successfully
+    # Single HTTPS ingress entrypoint
+    networks:
+      - proxy_net
+    # Public HTTP/HTTPS exposure (LAN only; no router port forwarding)
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Docker socket for dynamic service discovery (security-sensitive mount)
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config/traefik/usersfile:/etc/traefik/usersfile:ro
+      - ./artifacts/pki:/certs/:ro
+      - traefik-data:/data
+    restart: unless-stopped
+    environment:
+      - SSL_CERT_FILE=/certs/root_ca.crt
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy_net
+      # Router for Traefik Dashboard
+      - traefik.http.routers.traefik.rule=Host(`traefik.home.arpa`)
+      - traefik.http.routers.traefik.entrypoints=websecure
+      - traefik.http.routers.traefik.service=api@internal
+      - traefik.http.routers.traefik.tls=true
+      - traefik.http.routers.traefik.tls.certresolver=stepca
+
+      # BasicAuth Middleware -> admin
+      - traefik.http.middlewares.traefik-auth.basicauth.usersfile=/etc/traefik/usersfile
+      - traefik.http.routers.traefik.middlewares=traefik-auth
+
+  stepca:
+    image: smallstep/step-ca:0.26.1
+    container_name: stepca
+    # Internal ACME CA (no published ports)
+    networks:
+      - proxy_net
+    volumes:
+      # Persistent CA state (keys, certs)
+      - stepca-data:/home/step
+      # Bootstrap password (CI/local secret)
+      - ./config/stepca/password.txt:/run/password.txt:ro
+    environment:
+      DOCKER_STEPCA_INIT_NAME: ${STEPCA_INIT_NAME:-home-arpa-ca}
+      DOCKER_STEPCA_INIT_DNS_NAMES: ${STEPCA_INIT_DNS_NAMES:-stepca,stepca.home.arpa}
+      DOCKER_STEPCA_INIT_ADDRESS: ${STEPCA_INIT_ADDRESS:-:9000}
+      DOCKER_STEPCA_INIT_PROVISIONER_NAME: ${STEPCA_INIT_PROVISIONER_NAME:-admin}
+      DOCKER_STEPCA_INIT_PASSWORD_FILE: /run/password.txt
+      DOCKER_STEPCA_INIT_ACME: ${STEPCA_INIT_ACME:-true}
+    restart: unless-stopped
+    # Map internal FQDNs to host gateway for ACME validation
+    extra_hosts:
+      - "traefik.home.arpa:host-gateway"
+      - "pihole.home.arpa:host-gateway"
+
+  stepca-export:
+    image: curlimages/curl:8.6.0
+    # One-shot job to export Root CA bundle after initialization
+    depends_on:
+      - stepca
+    networks:
+      - proxy_net
+    volumes:
+      - ./artifacts/pki:/export
+      - ./config/stepca/export-roots.sh:/usr/local/bin/export-roots.sh:ro
+    entrypoint: ["/bin/sh", "-lc"]
+    command: ["sh /usr/local/bin/export-roots.sh"]
+    restart: "no" # run once and exit
+
+networks:
+  dns_net:
+    # Isolated DNS resolver network
+    name: dns_net
+    driver: bridge
+
+  proxy_net:
+    # HTTPS ingress + internal PKI network
+    name: proxy_net
+    driver: bridge
+
+volumes:
+  pihole-etc:
+  pihole-dnsmasq:
+  unbound:
+  stepca-data:
+  traefik-data:

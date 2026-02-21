@@ -1,19 +1,13 @@
 .env
-data/
+**/acme.json
+**/*.key
+**/*.crt
+**/*.pem
 
-# Secrets & certificates
-secrets/**
-!secrets/**/.gitkeep
+# Step-CA Secrets
+config/stepca/password.txt
 
-# Environment files
-.env
-.env.*
+# Traefik
+config/traefik/usersfile
 
-# Optional: editor / OS
-.DS_Store
-*.swp
-
-!nginx/ssl/
-!nginx/ssl/certs/
-!nginx/ssl/private/
-!.gitkeep
+.idea

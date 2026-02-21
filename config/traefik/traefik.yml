@@ -1,0 +1,54 @@
+# EntryPoints
+# web: plain HTTP entrypoint.
+# All HTTP traffic is permanently redirected to HTTPS.
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+
+# API & Dashboard
+# Dashboard is enabled but not exposed insecurely.
+# Access is controlled via router + BasicAuth middleware in Docker labels.
+api:
+  dashboard: true
+  insecure: false
+
+
+# Providers
+# Docker provider is used for dynamic service discovery.
+# exposedByDefault=false ensures only explicitly labeled containers are routed.
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+
+
+# ACME / Internal PKI
+# Certificates are issued by internal step-ca via ACME.
+# Storage is persisted in /data (Docker volume).
+certificatesResolvers:
+  stepca:
+    acme:
+      email: admin@home.arpa
+      storage: /data/acme.json
+      caServer: https://stepca:9000/acme/acme/directory
+      tlsChallenge: true
+
+# Logging
+# INFO level is sufficient for normal operation.
+# Increase to DEBUG only for troubleshooting.
+log:
+  level: INFO
+
+# Access log enabled (default format).
+accessLog: {}
+# Enables Traefik health endpoint (used for monitoring if required)
+ping: {}

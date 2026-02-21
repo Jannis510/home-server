@@ -1,0 +1,58 @@
+---
+# Smoke test workflow
+# - Spins up the full stack using CI overrides
+# - Runs integration-level smoke checks (DNS, PKI, routing)
+# - Ensures stack is operational before merge to main
+name: Smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "compose.yml"
+      - "compose.ci.yml"
+      - "config/**"
+      - "scripts/**"
+  push:
+    branches: [main]
+    paths:
+      - "compose.yml"
+      - "compose.ci.yml"
+      - "config/**"
+      - "scripts/**"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare CI secrets and local artifacts
+        run: |
+          mkdir -p config/stepca config/traefik
+          mkdir -p artifacts/pki
+          chmod 0777 artifacts/pki
+          printf '%s\n' 'ci-smoke-password' > config/stepca/password.txt
+          TRAEFIK_AUTH_LINE="$(docker run --rm httpd:2.4-alpine htpasswd -nbB admin ci-smoke-password | tr -d '\r\n')"
+          printf '%s\n' "$TRAEFIK_AUTH_LINE" > config/traefik/usersfile
+
+      - name: Start stack (CI mode)
+        run: |
+          docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml up -d --build
+
+      - name: Run smoke script
+        run: |
+          chmod +x scripts/smoke.sh
+          scripts/smoke.sh
+
+      - name: Dump stack state on failure
+        if: failure()
+        run: |
+          docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml ps
+          docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml logs --no-color --tail=200
+
+      - name: Teardown stack
+        if: always()
+        run: |
+          docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml down -v --remove-orphans

@@ -1,0 +1,87 @@
+---
+# Security scanning workflow
+# - Filesystem scan on PR and push to main
+# - Scheduled weekly image scan
+# - Results uploaded as SARIF (GitHub Security tab) and artifacts
+name: Security Scan
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "compose.yml"
+      - "compose.ci.yml"
+      - "config/**"
+      - "scripts/**"
+      - ".github/workflows/security.yml"
+  push:
+    branches: [main]
+    paths:
+      - "compose.yml"
+      - "compose.ci.yml"
+      - "config/**"
+      - "scripts/**"
+      - ".github/workflows/security.yml"
+  schedule:
+    - cron: "0 6 * * 1"  # Monday 06:00 UTC
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  fs-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan (SARIF)
+        run: |
+          mkdir -p trivy-results
+          docker run --rm -v "$PWD:/work" aquasec/trivy:0.50.2 \
+            fs --severity CRITICAL,HIGH --exit-code 1 \
+            --format sarif --output /work/trivy-results/trivy-fs.sarif /work
+
+      - name: Upload FS SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results/trivy-fs.sarif
+          category: trivy-fs
+
+      - name: Upload FS scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-fs-results
+          path: trivy-results/
+
+  image-scan:
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull images from compose
+        run: |
+          docker compose --env-file .env.ci -f compose.yml pull
+
+      - name: Trivy image scan (SARIF per image)
+        run: |
+          set -euo pipefail
+          mkdir -p trivy-results/images
+          IMAGES=$(docker compose --env-file .env.ci -f compose.yml config | awk '/image:/ {print $2}' | sort -u)
+          for img in $IMAGES; do
+            echo "Scanning $img"
+            SAFE_NAME=$(echo "$img" | tr '/:@' '___')
+            docker run --rm -v "$PWD:/work" aquasec/trivy:0.50.2 \
+              image --severity CRITICAL,HIGH --exit-code 1 \
+              --format sarif --output "/work/trivy-results/images/${SAFE_NAME}.sarif" "$img"
+          done
+
+      - name: Upload image scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-results
+          path: trivy-results/images/

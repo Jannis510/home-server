@@ -1,0 +1,61 @@
+---
+# CI workflow
+# - Validates Docker Compose configuration
+# - Lints YAML and shell scripts
+# - Enforces repository policies (no :latest, no DEBUG on main)
+# - Prevents misconfiguration before merge to main
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose configuration
+        run: |
+          docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml config >/dev/null
+
+      - name: Lint YAML files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .
+          config_data: |
+            extends: default
+            rules:
+              document-start: disable
+              truthy: disable
+              new-line-at-end-of-file: enable
+              line-length: disable
+
+      - name: ShellCheck (config + scripts)
+        run: |
+          if ! command -v shellcheck >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y shellcheck
+          fi
+          find config scripts -type f -name "*.sh" -print0 | xargs -0 -r shellcheck
+
+      - name: Policy - forbid :latest image tags
+        run: |
+          if grep -R --line-number -E 'image:\s+.+:latest\b' compose.yml; then
+            echo "ERROR: Do not use :latest tags." >&2
+            exit 1
+          fi
+          if grep -R --line-number --include='*.sh' -E ':[[:space:]]*latest\b' scripts; then
+            echo "ERROR: Do not use :latest tags in shell scripts." >&2
+            exit 1
+          fi
+
+      - name: Policy - disallow Traefik DEBUG log level on main
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main') }}
+        run: |
+          if grep -R --line-number -E '^\s*level:\s*DEBUG\s*$' config/traefik/traefik.yml; then
+            echo "ERROR: Traefik log level DEBUG on main is not allowed." >&2
+            exit 1
+          fi
