@@ -37,7 +37,8 @@ External access is intended exclusively via VPN; no direct public exposure is re
 
 ## 📦 Overview
 
-This repository provides a production-oriented infrastructure stack for a private home lab operating within a private LAN environment.
+This repository provides a production-inspired infrastructure stack
+for a private home lab operating within a LAN environment.
 
 The stack consists of:
 * **Pi-hole** – local DNS frontend
@@ -83,13 +84,21 @@ The Docker host exposes only the following ports:
 
 No other containers are directly published to the host network.
 
+⚠ Note: By default, Docker publishes ports on all host interfaces (0.0.0.0).
+If the host has multiple network interfaces (e.g., LAN, VPN, WAN),
+ensure ports are either:
+
+- Bound explicitly to the LAN IP, or
+- Restricted via host firewall rules.
+
 ---
 
 ### Service Reachability
 
 #### Public Internet
-* No direct exposure.
-* No port forwarding configured or required.
+* No direct exposure by default.
+* No port forwarding should be configured on the router.
+* Ensure that host firewall rules block inbound WAN traffic.
 
 #### LAN / VPN Clients
 * DNS via host IP or `pihole.home.arpa` (`53/tcp`, `53/udp`)
@@ -514,9 +523,15 @@ Removes containers **and** volumes. On the next startup, all services are initia
 
 ## Important: PKI / step-ca
 
-If volumes are removed, `step-ca` will typically generate a new Certificate Authority (CA) during the next initialization.
+If volumes are removed, `step-ca` will generate a new Certificate Authority (CA).
 
-Clients that previously trusted the old Root CA must be updated to trust the newly generated Root CA.
+Consequences:
+
+- Previously issued certificates become untrusted
+- All clients must reinstall the newly generated Root CA
+- Any previously trusted trust chain is invalidated
+
+Plan CA resets carefully.
 
 ---
 
@@ -636,33 +651,45 @@ This stack follows a minimal-exposure, LAN-only security model with explicit tru
 
 ### 1. Exposure Surface
 
-The Docker host exposes only:
+By design, the Docker host is intended to expose only:
 
 * `53/tcp`, `53/udp` → DNS (Pi-hole)
 * `80/tcp`, `443/tcp` → HTTPS ingress (Traefik)
 
-No other containers are published to the host network.
+No other containers should be published to the host network.
 
 All administrative interfaces are accessible only through HTTPS behind Traefik.
 
-No public port forwarding is required or intended.
+This assumes:
 
+- No router port forwarding is configured
+- Host firewall rules block unsolicited WAN traffic
+- Ports are not rebound to public interfaces
 ---
 
 ### 2. Docker Socket Access
 
 Traefik requires access to the Docker socket for dynamic service discovery.
 
-This grants Traefik elevated insight into container metadata and limited lifecycle control.
-If Traefik were compromised, an attacker could potentially interact with the Docker API on the host.
+⚠ Security Implication:
+
+Access to `/var/run/docker.sock` is effectively equivalent to root-level control over the Docker host.
+
+If Traefik were compromised, an attacker could:
+
+- Inspect all container metadata
+- Start new containers
+- Mount host paths
+- Escalate privileges
+- Potentially gain full control over the host system
 
 Mitigation strategies:
 
-* Protect the Traefik dashboard via BasicAuth
-* Limit host access to trusted administrators only
-* Avoid overly permissive container labels
-* Consider a Docker socket proxy in higher-security environments
-
+- Protect the Traefik dashboard via strong authentication
+- Restrict host-level access to trusted administrators only
+- Avoid overly permissive container labels
+- Consider a Docker socket proxy (e.g., Tecnativa/docker-socket-proxy) in higher-security environments
+- Restrict port bindings to LAN interfaces where possible
 ---
 
 ### 3. Internal PKI and Trust
@@ -705,6 +732,23 @@ This stack assumes:
 
 It is not designed as a hardened, internet-facing production environment.
 
+
+### 6. Secret Handling
+
+The following files contain sensitive information and must never be committed to version control:
+
+- `config/traefik/usersfile`
+- `config/stepca/password.txt`
+- `.env`
+- Any private keys under `config/stepca/`
+
+Ensure:
+
+- These paths are covered by `.gitignore`
+- Only example/template files are tracked (e.g., `.example` variants)
+- Backups of CA material are stored securely and offline
+
+Note: Compromise of step-ca private keys requires complete CA rotation and client trust reinstallation.
 
 ## 🩺 Troubleshooting
 
@@ -778,6 +822,29 @@ If volumes were reset:
 * A new CA may have been generated
 * Reinstall the newly generated Root CA on all client devices
 
+---
+
+### Port 53 Already in Use (Linux Hosts)
+
+**Symptoms**
+
+* Docker fails to start Pi-hole
+* Error: "address already in use"
+
+**Cause**
+
+On Debian/Ubuntu systems, `systemd-resolved` may bind to port 53 by default.
+
+**Resolution**
+
+Check:
+
+```bash
+sudo lsof -i :53
+```
+If systemd-resolved is active, either:
+- Disable it, or
+- Reconfigure it to not bind on 0.0.0.0
 
 ## 📄 License
 
