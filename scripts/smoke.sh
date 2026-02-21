@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DNS_TOOL_IMAGE="ghcr.io/chrisss404/dnsutils:1.2.0"
+DNS_TOOL_IMAGE="alpine:3.21"
 
 compose() {
   docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml "$@"
@@ -79,7 +79,7 @@ compose ps
 # 2) DNS external resolution via Pi-hole
 dns_external="$(docker run --rm --network "$NETWORK_NAME" \
   "$DNS_TOOL_IMAGE" \
-  sh -lc 'dig @pihole example.com +short | head -n1')"
+  sh -lc 'apk add --no-cache bind-tools >/dev/null && dig @pihole example.com +short | head -n1')"
 assert_not_empty "$dns_external" "Pi-hole did not resolve example.com"
 
 # 3) Pi-hole must be configured to use Unbound as upstream
@@ -89,13 +89,13 @@ assert_equals "$pihole_upstream_env" "FTLCONF_dns_upstreams=unbound#5335" "Pi-ho
 # 4) Unbound must resolve external DNS directly
 unbound_external="$(docker run --rm --network "$DNS_NETWORK_NAME" \
   "$DNS_TOOL_IMAGE" \
-  sh -lc 'dig @unbound -p 5335 example.com +short | head -n1')"
+  sh -lc 'apk add --no-cache bind-tools >/dev/null && dig @unbound -p 5335 example.com +short | head -n1')"
 assert_not_empty "$unbound_external" "Unbound did not resolve example.com"
 
 # 5) Internal DNS record resolution
 dns_internal="$(docker run --rm --network "$NETWORK_NAME" \
   "$DNS_TOOL_IMAGE" \
-  sh -lc 'dig @pihole traefik.home.arpa +short | head -n1')"
+  sh -lc 'apk add --no-cache bind-tools >/dev/null && dig @pihole traefik.home.arpa +short | head -n1')"
 assert_not_empty "$dns_internal" "Pi-hole did not resolve traefik.home.arpa"
 
 # 6) step-ca health endpoint
