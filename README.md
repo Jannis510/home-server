@@ -21,20 +21,21 @@ External access is intended exclusively via VPN; no direct public exposure is re
 
 ## Table of Contents
 
-* [Overview](#overview)
-* [Architecture](#architecture)
-* [Prerequisites](#prerequisites)
-* [Quick Start](#quick-start)
-* [Configuration](#configuration)
-* [Operations](#operations)
-* [CI/CD and Security](#cicd-and-security)
-* [Documentation](#documentation)
-* [Troubleshooting](#troubleshooting)
-* [License](#license)
+* 📦 [Overview](#overview)
+* 🏗️ [Architecture](#architecture)
+* ⚙️ [Prerequisites](#prerequisites)
+* 🚀 [Quick Start](#quick-start)
+* 🔧 [Configuration](#configuration)
+* 🛠️ [Operations](#operations)
+* 🔐 [CI/CD](#cicd-and-security)
+* 📖 [Documentation](#documentation)
+* 🔐 [Security Considerations](#security-considerations)
+* 🩺 [Troubleshooting](#troubleshooting)
+* 📄[License](#license)
 
 ---
 
-## Overview
+## 📦 Overview
 
 This repository provides a production-oriented infrastructure stack for a private home lab operating within a private LAN environment.
 
@@ -57,7 +58,7 @@ The stack emphasizes:
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 This section describes traffic flow, network boundaries, service exposure, and trust zones of the stack.
 
@@ -778,6 +779,6 @@ If volumes were reset:
 * Reinstall the newly generated Root CA on all client devices
 
 
-## License
+## 📄 License
 
 See [`LICENSE`](LICENSE).
