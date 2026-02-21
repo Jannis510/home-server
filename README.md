@@ -21,17 +21,17 @@ External access is intended exclusively via VPN; no direct public exposure is re
 
 ## Table of Contents
 
-* 📦 [Overview](#overview)
-* 🏗️ [Architecture](#architecture)
-* ⚙️ [Prerequisites](#prerequisites)
-* 🚀 [Quick Start](#quick-start)
-* 🔧 [Configuration](#configuration)
-* 🛠️ [Operations](#operations)
-* 🔐 [CI/CD](#cicd-and-security)
-* 📖 [Documentation](#documentation)
-* 🔐 [Security Considerations](#security-considerations)
-* 🩺 [Troubleshooting](#troubleshooting)
-* 📄 [License](#license)
+* 📦 [Overview](#-overview)
+* 🏗️ [Architecture](#-architecture)
+* ⚙️ [Prerequisites](#-prerequisites)
+* 🚀 [Quick Start](#-quick-start)
+* 🔧 [Configuration](#-configuration)
+* 🛠️ [Operations](#-operations)
+* 🔐 [CI/CD and Security](#-cicd-and-security)
+* 📖 [Documentation](#-documentation)
+* 🔐 [Security Considerations](#-security-considerations)
+* 🩺 [Troubleshooting](#-troubleshooting)
+* 📄 [License](#-license)
 
 ---
 
