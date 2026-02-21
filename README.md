@@ -1,9 +1,9 @@
 # Home Lab Infrastructure Stack
 <!-- Project Status -->
-[![CI](https://img.shields.io/github/actions/workflow/status/Jannis510/home-server/ci.yml?branch=main&style=flat-square)](https://github.com/Jannis510/home-server/actions/workflows/ci.yml)
-[![Security](https://img.shields.io/github/actions/workflow/status/Jannis510/home-server/security.yml?branch=main&label=security&style=flat-square)](https://github.com/Jannis510/home-server/actions/workflows/security.yml)
-[![Version](https://img.shields.io/github/v/release/Jannis510/home-server?style=flat-square)](https://github.com/Jannis510/home-server/releases)
-[![License](https://img.shields.io/github/license/Jannis510/home-server?style=flat-square)](https://github.com/Jannis510/home-server/blob/main/LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/Jannis510/homelab-infrastructure/ci.yml?branch=main&style=flat-square)](https://github.com/Jannis510/homelab-infrastructure/actions/workflows/ci.yml)
+[![Security](https://img.shields.io/github/actions/workflow/status/Jannis510/homelab-infrastructure/security.yml?branch=main&label=security&style=flat-square)](https://github.com/Jannis510/homelab-infrastructure/actions/workflows/security.yml)
+[![Version](https://img.shields.io/github/v/release/Jannis510/homelab-infrastructure?style=flat-square)](https://github.com/Jannis510/homelab-infrastructure/releases)
+[![License](https://img.shields.io/github/license/Jannis510/homelab-infrastructure?style=flat-square)](https://github.com/Jannis510/homelab-infrastructure/blob/main/LICENSE)
 
 <!-- Stack -->
 [![Traefik](https://img.shields.io/badge/Traefik-Reverse_Proxy-2E3440?style=flat-square&labelColor=2E3440&color=5E81AC)](https://github.com/traefik/traefik)
