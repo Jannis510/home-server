@@ -63,6 +63,28 @@ The stack emphasizes:
 
 This section describes traffic flow, network boundaries, service exposure, and trust zones of the stack.
 
+
+```mermaid
+flowchart TB
+
+    Client["LAN / VPN Client"]
+
+    Client -->|DNS 53| PiHole["Pi-hole (DNS)"]
+    PiHole -->|Recursive| Unbound["Unbound"]
+
+    Client -->|HTTPS 443| Traefik["Traefik (Ingress)"]
+    Traefik -->|route| PiHoleUI["Pi-hole Web UI"]
+    Traefik -->|ACME| StepCA["step-ca (Internal CA)"]
+```
+
+Clients inside the LAN or connected via VPN use Pi-hole as their primary DNS resolver.
+External DNS queries are forwarded to Unbound, which performs recursive resolution.
+
+All HTTPS traffic enters through Traefik, which acts as the single ingress point.
+Traefik terminates TLS using certificates issued by the internal step-ca instance via ACME.
+
+Backend services (e.g., the Pi-hole web interface) are never exposed directly and are reachable only through Traefik.
+
 ---
 
 ### Traffic Flow
@@ -127,6 +149,24 @@ ACME communication between Traefik and step-ca occurs exclusively inside the Doc
 
 ### Docker Network Segmentation
 
+```mermaid
+flowchart LR
+
+  subgraph dns_net["dns_net"]
+    PiHoleDNS["Pi-hole (dual-homend)"]
+    Unbound["Unbound"]
+  end
+
+  subgraph proxy_net["proxy_net"]
+    PiHoleWEB["Pi-hole (dual-homend)"]
+    Traefik["Traefik"]
+    StepCA["step-ca"]
+    Export["stepca-export"]
+  end
+
+  PiHoleDNS -.->|same Pi-hole| PiHoleWEB
+```
+
 * `dns_net`
   * Services: `pihole`, `unbound`
   * Purpose: resolver chain isolation
@@ -171,42 +211,6 @@ The architecture follows production-inspired design principles:
 Only required services are dual-homed.  
 No container is directly exposed except through defined ingress paths (DNS and HTTPS).
 
----
-### ASCII Architecture Diagram
-
-```text
-                           (No direct public exposure)
-                                   Internet
-                                       |
-                           [Optional VPN entrypoint]
-                                       |
-                    +-----------------------------------+
-                    |   Home Server Host (Docker)      |
-                    |-----------------------------------|
- LAN / VPN Clients  |  Open host ports:                |
- (trusted clients)  |   - 53/tcp,53/udp -> Pi-hole     |
-        |           |   - 80/tcp,443/tcp -> Traefik    |
-        |           +------------------+----------------+
-        |                              |
-        | DNS :53                      | HTTP/HTTPS :80/:443
-        v                              v
-  +-------------+               +---------------+
-  |   Pi-hole   |<------------->|    Traefik    |
-  | (dns_net +  |  proxy_net    |  (proxy_net)  |
-  |  proxy_net) |               +-------+-------+
-  +------+------+                       |
-         | dns_net :5335               | proxy_net (service routing + ACME)
-         v                              v
-   +-------------+               +---------------+
-   |   Unbound   |               |    step-ca    |
-   |  (dns_net)  |               |  (proxy_net)  |
-   +-------------+               +---------------+
-
-Trust zones:
-  1) client_zone (LAN/VPN)
-  2) dns_net (resolver path)
-  3) proxy_net (ingress + PKI)
-```
 
 ---
 
