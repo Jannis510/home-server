@@ -865,4 +865,12 @@ If systemd-resolved is active, either:
 
 ## 📄 License
 
-See [`LICENSE`](LICENSE).
+This project is licensed under the terms of the MIT License.  
+See the [`LICENSE`](LICENSE) file for details.
+
+## Disclaimer
+
+This project is provided for educational and personal use only.  
+It is distributed "as is", without warranty of any kind.  
+The author assumes no responsibility for security issues, data loss,  
+or damages resulting from its use or misconfiguration.
