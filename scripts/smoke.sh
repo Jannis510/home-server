@@ -73,43 +73,43 @@ stepca_export_exit_code="$(docker inspect -f '{{.State.ExitCode}}' "$stepca_expo
 assert_equals "$stepca_export_state" "exited" "stepca-export did not finish as a one-shot container"
 assert_equals "$stepca_export_exit_code" "0" "stepca-export failed"
 
-# Show current service status for diagnostics
+# 3) Show current service status for diagnostics
 compose ps
 
-# 2) DNS external resolution via Pi-hole
+# 4) DNS external resolution via Pi-hole (query Pi-hole over proxy_net; Pi-hole is dual-homed)
 dns_external="$(docker run --rm --network "$NETWORK_NAME" \
   "$DNS_TOOL_IMAGE" \
   sh -lc 'apk add --no-cache bind-tools >/dev/null && dig @pihole example.com +short | head -n1')"
 assert_not_empty "$dns_external" "Pi-hole did not resolve example.com"
 
-# 3) Pi-hole must be configured to use Unbound as upstream
+# 5) Pi-hole must be configured to use Unbound as upstream
 pihole_upstream_env="$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' pihole | grep '^FTLCONF_dns_upstreams=' || true)"
 assert_equals "$pihole_upstream_env" "FTLCONF_dns_upstreams=unbound#5335" "Pi-hole upstream is not set to unbound#5335"
 
-# 4) Unbound must resolve external DNS directly
+# 6) Unbound must resolve external DNS directly
 unbound_external="$(docker run --rm --network "$DNS_NETWORK_NAME" \
   "$DNS_TOOL_IMAGE" \
   sh -lc 'apk add --no-cache bind-tools >/dev/null && dig @unbound -p 5335 example.com +short | head -n1')"
 assert_not_empty "$unbound_external" "Unbound did not resolve example.com"
 
-# 5) Internal DNS record resolution
+# 7) Internal DNS record resolution
 dns_internal="$(docker run --rm --network "$NETWORK_NAME" \
   "$DNS_TOOL_IMAGE" \
   sh -lc 'apk add --no-cache bind-tools >/dev/null && dig @pihole traefik.home.arpa +short | head -n1')"
 assert_not_empty "$dns_internal" "Pi-hole did not resolve traefik.home.arpa"
 
-# 6) step-ca health endpoint
+# 8) step-ca health endpoint
 stepca_health="$(compose exec -T stepca sh -lc 'wget --no-check-certificate -qO- https://localhost:9000/health' || true)"
 assert_not_empty "$stepca_health" "step-ca health endpoint returned no payload"
 
-# 7) Traefik must answer on :80
+# 9) Traefik must answer on :80
 traefik_http_code="$(curl -sS -o /dev/null -w '%{http_code}' http://localhost:80)"
 if [ "$traefik_http_code" -lt 200 ] || [ "$traefik_http_code" -ge 500 ]; then
   echo "ERROR: Traefik HTTP probe failed (unexpected status $traefik_http_code)." >&2
   exit 1
 fi
 
-# 8) Traefik docker routers must be loaded
+# 10) Traefik docker routers must be loaded
 routers_json="$(curl -ksS --resolve traefik.home.arpa:443:127.0.0.1 \
   -u admin:ci-smoke-password \
   https://traefik.home.arpa/api/http/routers || true)"

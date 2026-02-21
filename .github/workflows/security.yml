@@ -1,4 +1,8 @@
 ---
+# Security scanning workflow
+# - Filesystem scan on PR and push to main
+# - Scheduled weekly image scan
+# - Results uploaded as SARIF (GitHub Security tab) and artifacts
 name: Security Scan
 
 on:
@@ -19,7 +23,7 @@ on:
       - "scripts/**"
       - ".github/workflows/security.yml"
   schedule:
-    - cron: "0 6 * * 1"  # Montag 06:00 UTC
+    - cron: "0 6 * * 1"  # Monday 06:00 UTC
 
 permissions:
   contents: read

@@ -1,4 +1,8 @@
 ---
+# Smoke test workflow
+# - Spins up the full stack using CI overrides
+# - Runs integration-level smoke checks (DNS, PKI, routing)
+# - Ensures stack is operational before merge to main
 name: Smoke
 
 on:
@@ -24,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Prepare CI-only local files
+      - name: Prepare CI secrets and local artifacts
         run: |
           mkdir -p config/stepca config/traefik
           mkdir -p artifacts/pki
@@ -33,7 +37,7 @@ jobs:
           TRAEFIK_AUTH_LINE="$(docker run --rm httpd:2.4-alpine htpasswd -nbB admin ci-smoke-password | tr -d '\r\n')"
           printf '%s\n' "$TRAEFIK_AUTH_LINE" > config/traefik/usersfile
 
-      - name: Bring stack up
+      - name: Start stack (CI mode)
         run: |
           docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml up -d --build
 
@@ -42,13 +46,13 @@ jobs:
           chmod +x scripts/smoke.sh
           scripts/smoke.sh
 
-      - name: Dump compose ps on failure
+      - name: Dump stack state on failure
         if: failure()
         run: |
           docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml ps
           docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml logs --no-color --tail=200
 
-      - name: Cleanup stack
+      - name: Teardown stack
         if: always()
         run: |
           docker compose --env-file .env.ci -f compose.yml -f compose.ci.yml down -v --remove-orphans

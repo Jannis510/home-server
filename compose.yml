@@ -3,12 +3,14 @@ services:
   unbound:
     image: mvance/unbound:1.19.3
     container_name: unbound
+    # Internal recursive resolver (no public port exposure)
     networks:
       - dns_net
     volumes:
       - ./config/unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf:ro
       - unbound:/opt/unbound/etc/unbound/var
     restart: unless-stopped
+    # Exposed only inside dns_net (not published to host)
     expose:
       - "5335"
     healthcheck:
@@ -22,12 +24,17 @@ services:
     image: pihole/pihole:2025.08.0
     container_name: pihole
     hostname: pihole
+    # Ensure Unbound is healthy before DNS service starts
     depends_on:
       unbound:
         condition: service_healthy
+    # Dual-homed:
+    # - dns_net for recursive resolution path
+    # - proxy_net for web UI exposure via Traefik
     networks:
       - dns_net
       - proxy_net
+    # Publish DNS to host (LAN clients use this as primary resolver)
     ports:
       - "53:53/tcp"
       - "53:53/udp"
@@ -35,7 +42,7 @@ services:
       TZ: "${TZ}"
       FTLCONF_webserver_api_password: "${PIHOLE_WEBPASSWORD}"
       DNSMASQ_LISTENING: "${PIHOLE_DNSMASQ_LISTENING:-all}"
-      # Pi-hole nutzt Unbound als Upstream (Containername im dns_net)
+      # Use Unbound as upstream resolver (container name inside dns_net)
       FTLCONF_dns_upstreams: "${PIHOLE_DNS_UPSTREAMS:-unbound#5335}"
       RATE_LIMIT: "${PIHOLE_RATE_LIMIT:-0/0}"
       FTLCONF_dns_hosts: |-
@@ -54,7 +61,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=proxy_net
 
-      # Redirect von pihole.home.arpa -> /admin/
+      # Redirect pihole.home.arpa -> /admin/
       - traefik.http.routers.pihole.rule=Host(`pihole.home.arpa`)
       - traefik.http.routers.pihole.entrypoints=websecure
       - traefik.http.routers.pihole.tls=true
@@ -71,15 +78,19 @@ services:
   traefik:
     image: traefik:v2.11
     container_name: traefik
+    # Wait for Root CA export before starting ACME resolver
     depends_on:
       stepca-export:
         condition: service_completed_successfully
+    # Single HTTPS ingress entrypoint
     networks:
       - proxy_net
+    # Public HTTP/HTTPS exposure (LAN only; no router port forwarding)
     ports:
       - "80:80"
       - "443:443"
     volumes:
+      # Docker socket for dynamic service discovery (security-sensitive mount)
       - /var/run/docker.sock:/var/run/docker.sock
       - ./config/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./config/traefik/usersfile:/etc/traefik/usersfile:ro
@@ -91,7 +102,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy_net
-      # Router fürs Traefik Dashboard
+      # Router for Traefik Dashboard
       - traefik.http.routers.traefik.rule=Host(`traefik.home.arpa`)
       - traefik.http.routers.traefik.entrypoints=websecure
       - traefik.http.routers.traefik.service=api@internal
@@ -100,16 +111,18 @@ services:
 
       # BasicAuth Middleware -> admin
       - traefik.http.middlewares.traefik-auth.basicauth.usersfile=/etc/traefik/usersfile
-      # Middleware am Router aktivieren
       - traefik.http.routers.traefik.middlewares=traefik-auth
 
   stepca:
     image: smallstep/step-ca:0.26.1
     container_name: stepca
+    # Internal ACME CA (no published ports)
     networks:
       - proxy_net
     volumes:
+      # Persistent CA state (keys, certs)
       - stepca-data:/home/step
+      # Bootstrap password (CI/local secret)
       - ./config/stepca/password.txt:/run/password.txt:ro
     environment:
       DOCKER_STEPCA_INIT_NAME: ${STEPCA_INIT_NAME:-home-arpa-ca}
@@ -119,12 +132,14 @@ services:
       DOCKER_STEPCA_INIT_PASSWORD_FILE: /run/password.txt
       DOCKER_STEPCA_INIT_ACME: ${STEPCA_INIT_ACME:-true}
     restart: unless-stopped
+    # Map internal FQDNs to host gateway for ACME validation
     extra_hosts:
       - "traefik.home.arpa:host-gateway"
       - "pihole.home.arpa:host-gateway"
 
   stepca-export:
     image: curlimages/curl:8.6.0
+    # One-shot job to export Root CA bundle after initialization
     depends_on:
       - stepca
     networks:
@@ -134,14 +149,16 @@ services:
       - ./config/stepca/export-roots.sh:/usr/local/bin/export-roots.sh:ro
     entrypoint: ["/bin/sh", "-lc"]
     command: ["sh /usr/local/bin/export-roots.sh"]
-    restart: "no"
+    restart: "no" # run once and exit
 
 networks:
   dns_net:
+    # Isolated DNS resolver network
     name: dns_net
     driver: bridge
 
   proxy_net:
+    # HTTPS ingress + internal PKI network
     name: proxy_net
     driver: bridge
 

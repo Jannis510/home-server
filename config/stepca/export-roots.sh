@@ -7,7 +7,7 @@ OUT_ROOTCRT="/export/root_ca.crt"
 CA_HEALTH="https://stepca:9000/health"
 CA_ROOTS="https://stepca:9000/roots.pem"
 
-# Wenn beide Dateien existieren -> skip
+# If both artifacts already exist and are non-empty, skip export.
 if [ -s "$OUT_ROOTS" ] && [ -s "$OUT_ROOTCRT" ]; then
   echo "roots.pem + root_ca.crt exist, skip"
   exit 0
@@ -32,7 +32,7 @@ fi
 echo "exporting roots..."
 curl -skf "$CA_ROOTS" -o "$OUT_ROOTS"
 
-# root_ca.crt ableiten (gleicher PEM-Inhalt)
+# Derive root_ca.crt from roots.pem (same PEM bundle; exported for client trust convenience)
 cp "$OUT_ROOTS" "$OUT_ROOTCRT"
 
 echo "exported:"
