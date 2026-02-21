@@ -31,7 +31,7 @@ External access is intended exclusively via VPN; no direct public exposure is re
 * 📖 [Documentation](#documentation)
 * 🔐 [Security Considerations](#security-considerations)
 * 🩺 [Troubleshooting](#troubleshooting)
-* 📄[License](#license)
+* 📄 [License](#license)
 
 ---
 
