@@ -59,7 +59,7 @@ If CA private material is compromised: perform full CA rotation and re-enroll tr
 | Network | Services |
 |---------|----------|
 | `dns_net` | `pihole`, `unbound` |
-| `proxy_net` | `traefik`, `pihole`, optional services |
+| `proxy_net` | `traefik`, `authelia`, `pihole`, optional services |
 | `pki_net` | `stepca`, `stepca-export`, `traefik` |
 | `socket_proxy_net` | `glances`, `dozzle`, `monitoring-socket-proxy` (internal only) |
 
