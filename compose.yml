@@ -21,7 +21,7 @@ services:
       start_period: 15s
 
   pihole:
-    image: pihole/pihole:2026.02.0
+    image: pihole/pihole:2026.04.0
     container_name: pihole
     hostname: pihole
     # Ensure Unbound is healthy before DNS service starts
@@ -89,7 +89,7 @@ services:
       start_period: 15s
 
   traefik:
-    image: traefik:v3.6.11
+    image: traefik:v3.6.13
     container_name: traefik
     # Single HTTPS ingress entrypoint
     networks:
@@ -149,7 +149,7 @@ services:
       - "uptime-kuma.app.home.arpa:host-gateway"
 
   stepca-export:
-    image: alpine:3.21
+    image: alpine:3.23.3
     # One-shot job to export Root CA bundle after initialization.
     # Gated behind the "init" profile — only runs on first start or after a hard reset.
     # Normal `docker compose up -d` skips this service; artifacts persist on disk.

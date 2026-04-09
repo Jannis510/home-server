@@ -2,7 +2,7 @@ name: bentopdf
 
 services:
   bentopdf:
-    image: ghcr.io/alam00000/bentopdf:v2.7.0
+    image: ghcr.io/alam00000/bentopdf:v2.8.2
     container_name: bentopdf
     # Access exclusively via Traefik — no published ports
     networks:
