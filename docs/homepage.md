@@ -9,7 +9,7 @@ It is an optional service and runs independently from the core stack.
 ## URL
 
 ```
-https://start.app.home.arpa
+https://homepage.app.home.arpa
 ```
 
 Access is protected by Authelia (SSO, same session as all other services).
