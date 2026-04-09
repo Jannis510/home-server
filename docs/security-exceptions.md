@@ -209,6 +209,73 @@ Review trigger: New uptime-kuma release with updated Node.js dependencies and re
 
 Review trigger: Glances dropping or replacing the ecdsa dependency.
 
+### convertx:v0.17.0 — Debian 13 base layer, fixes available
+
+All CVEs are in OS-level packages shipped with the Debian 13 base image inside convertx.
+No fix action possible without upstream image rebuild.
+
+| CVE | Severity | Component | Fixed in |
+|-----|----------|-----------|----------|
+| CVE-2025-2152 | CRITICAL | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2026-22770 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u5 |
+| CVE-2026-23876 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u5 |
+| CVE-2026-25897 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u6 |
+| CVE-2026-25898 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u6 |
+| CVE-2026-25968 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u6 |
+| CVE-2026-25971 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u6 |
+| CVE-2026-25983 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u6 |
+| CVE-2026-25986 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u6 |
+| CVE-2026-25987 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u6 |
+| CVE-2026-26283 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u6 |
+| CVE-2026-26284 | CRITICAL | `imagemagick*`, `libmagick*` | deb13u6 |
+| CVE-2026-34873 | CRITICAL | `libmbedcrypto16` | no fix |
+| CVE-2026-34875 | CRITICAL | `libmbedcrypto16` | no fix |
+| CVE-2026-2781  | CRITICAL | `libnss3` | deb13u1 |
+| CVE-2025-66034 | CRITICAL | `python3-fonttools` | deb13u1 |
+| CVE-2026-0968  | CRITICAL | `libssh-4` | no fix |
+| CVE-2024-48423 | HIGH | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2025-11275 | HIGH | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2025-11277 | HIGH | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2025-15538 | HIGH | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2025-2151  | HIGH | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2025-2592  | HIGH | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2025-2750–2757 | HIGH | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2025-3015  | HIGH | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2025-3158–3159 | HIGH | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2025-5200–5204 | HIGH | `assimp-utils`, `libassimp5` | no fix |
+| CVE-2026-23952–26066 (imagemagick) | HIGH | `imagemagick*`, `libmagick*` | deb13u5–u6 |
+| CVE-2026-27798–32636 (imagemagick) | HIGH | `imagemagick*`, `libmagick*` | deb13u6–u7 |
+| CVE-2026-25635/36/31/64/65/30853 | HIGH | `calibre`, `calibre-bin` | no fix |
+| CVE-2026-24882 | HIGH | `gnupg*`, `gpg*`, `dirmngr` | no fix |
+| CVE-2026-4111/4424 | HIGH | `libarchive13t64` | no fix |
+| CVE-2024-36600 | HIGH | `libcdio19t64` | no fix |
+| CVE-2026-33164 | HIGH | `libde265-0` | no fix |
+| CVE-2026-5201  | HIGH | `libgdk-pixbuf*` | no fix |
+| CVE-2026-23868/26740 | HIGH | `libgif7` | no fix |
+| CVE-2026-2921  | HIGH | `libgstreamer-plugins-base1.0-0` | deb13u1 |
+| CVE-2025-68431 | HIGH | `libheif*` | no fix |
+| CVE-2026-27601 | HIGH | `libjs-underscore` | no fix |
+| CVE-2026-1837  | HIGH | `libjxl*` | no fix |
+| CVE-2025-2338/50343 | HIGH | `libmatio13` | no fix |
+| CVE-2026-34872 | HIGH | `libmbedcrypto16` | no fix |
+| CVE-2026-25556 | HIGH | `libmupdf25.1`, `mupdf-tools` | no fix |
+| CVE-2025-12495/12839/12840/64181 | HIGH | `libopenexr-3-1-30` | no fix |
+| CVE-2026-27622/34379/34543–45/34588 | HIGH | `libopenexr-3-1-30` | no fix |
+| CVE-2026-22695/22801/25646/33416/33636 | HIGH | `libpng16-16t64` | deb13u2–u4 |
+| CVE-2025-10729 | HIGH | `libqt6svg6`, `libqt6svgwidgets6` | no fix |
+| CVE-2026-20884/20889/20911/21413 | HIGH | `libraw23t64` | no fix |
+| CVE-2026-24450/24660 | HIGH | `libraw23t64` | no fix |
+| CVE-2026-3731  | HIGH | `libssh-4` | no fix |
+| CVE-2026-4775  | HIGH | `libtiff6` | deb13u2 |
+| CVE-2025-59933/CVE-2026-2913 | HIGH | `libvips*` | no fix |
+| CVE-2026-3145/3147/3281–3283 | HIGH | `libvips*` | no fix |
+| CVE-2026-2447  | HIGH | `libvpx9` | deb13u1 |
+| CVE-2026-23949 | HIGH | `python3-setuptools-whl` | no fix |
+| CVE-2022-4055  | HIGH | `xdg-utils` | no fix |
+| CVE-2021-30472/CVE-2023-31566/31567 | HIGH | `libpodofo0.9.8t64` | no fix |
+
+Review trigger: New convertx release based on updated Debian 13 base image.
+
 ### uptime-kuma:2.2.1-slim — Debian 12 base layer, no fix available
 
 The following CVEs have no fix in Debian 12 (status: `affected` or `will_not_fix`).
