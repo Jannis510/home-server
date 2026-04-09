@@ -127,7 +127,7 @@ No initial setup required — Dozzle starts fully configured.
 
 ### Architecture
 
-Dozzle reads container logs and events through the shared `monitoring-socket-proxy` sidecar. Only `CONTAINERS` and `EVENTS` permissions are granted — no write access, no image or volume API access. See [Security → Docker Socket Proxy](security.md#docker-socket-proxy) for details.
+Dozzle reads container logs and events through the shared `monitoring-socket-proxy` sidecar. The proxy grants read-only access to `CONTAINERS`, `EVENTS`, `IMAGES`, `INFO`, `NETWORKS`, and `VOLUMES` — no write access to any Docker API endpoint. See [Security → Docker Socket Proxy](security.md#docker-socket-proxy) for details.
 
 ### Notes
 
